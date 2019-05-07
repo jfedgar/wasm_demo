@@ -11,6 +11,18 @@
 <body>
     <h1>Web Assembly Demo!</h1>
     <script>
+
+        // Initialize wasm with custom memory (array buffer):
+        // wasm will create a default memory buffer, but if we initialize it manually and pass
+        //   it in to our wasm as an import, we can guarantee that it exists 
+        //   when we call it in other functions (like readMemStr)
+        // 'initial' is in pages (64kb * 2)
+        // const wasmMemory = WebAssembly.Memory({ initial: 2 });
+        // then we can pass it in as an import: "memory: wasmMemory"
+        // and then edit our wat file (built c) directly to include the memory object 
+        // (we can't include it in c because c won't know what file type a 'wasmMemory' is)
+        // note: this is all made much simpler with emscripten
+
         // Read a string out of Web Assembly memory
         const readMemStr = (offset, length) => {
             const strBuffer = new Uint8Array(wasm.instance.exports.memory.buffer, offset, length);
