@@ -10,83 +10,25 @@
 
 <body>
     <h1>Web Assembly Demo!</h1>
+    <!-- this demonstrates ccall and cwrap and belongs with demo.c from emscripten
+    <script src="demo.js"></script>
     <script>
-
-        // Initialize wasm with custom memory (array buffer):
-        // wasm will create a default memory buffer, but if we initialize it manually and pass
-        //   it in to our wasm as an import, we can guarantee that it exists 
-        //   when we call it in other functions (like readMemStr)
-        // 'initial' is in pages (64kb * 2)
-        // const wasmMemory = WebAssembly.Memory({ initial: 2 });
-        // then we can pass it in as an import: "memory: wasmMemory"
-        // and then edit our wat file (built c) directly to include the memory object 
-        // (we can't include it in c because c won't know what file type a 'wasmMemory' is)
-        // note: this is all made much simpler with emscripten
-
-        // Read a string out of Web Assembly memory
-        const readMemStr = (offset, length) => {
-            const strBuffer = new Uint8Array(wasm.instance.exports.memory.buffer, offset, length);
-            // an array of 8 bit ints: (the decimal values of the chars that make up the string):
-            // console.log(strBuffer);
-            const str = new TextDecoder().decode(strBuffer);
-            console.log(str);
-            // note that we can't simply return a string here, as this is intended to be called within c and
-            // we would end up where we started if we returned str
-
-            // you also trigger an event in this javascript function. wasm does not have access
-            // to the dom, so if you want to use a calculated value that comes from wasm in the dom, you
-            // have to trigger an event from within a js function that has been passed into 
-            // window.dispatchEvent( new CustomEvent('wasmValue', { detail: str}));
+        // wrap c _greetWithArg as a JS function
+        // now we cann call 
+        const greetWithArg = cwrap('greetWithArg', 'string', ['string'])
+        console.log(greetWithArg('john'));
+    </script>-->
+    <script src="imports.js"></script>
+    <script>
+        // return a usable value in c
+        function getNum() {
+            return 22;
         }
 
-        // imports object - these are passed into our wasm program where they can be
-        // declared (if it is a c program) at the top and then used (c code below):
-        // void consoleLog(int n);
-
-        // int main() { 
-        //     return 42;
-        // }
-
-        // void getDoubleNumber(int x) {
-        //     consoleLog(x*2);
-        // }
-        // void greet() {
-        //     // note: if we just logged out the raw string it only gives us a pointer to the starting location of the string within memory (the array buffer)
-        //     char * msg = "Hello from C!";
-        //     strLog(msg, strlen(msg));
-        // }
-
-        const imports = {
-            env: {
-                numLog: console.log,
-                strLog: readMemStr
-            }
+        // return a usable string value in c
+        function getStr() {
+            return "Hello from JS!";
         }
-        // load wasm - use instantiateStreaming wherever possible (or at least compileStreaming)
-        // this downloads (streams), compiles and instantiates all at once
-        // you can also store the module and instance like this:
-        // const { module, instance } = await WebAssembly.instantiateStreaming(fetch... )
-        WebAssembly.instantiateStreaming(fetch('/program.wasm'), imports)
-            .then(wasm => {
-                console.log('WASM ready');
-                window.wasm = wasm;
-                // run function, 'instance' contains the instantiated version of the module
-                console.log("result of main: ", window.wasm.instance.exports.main());
-                // 'module' contains the actual module itself and functions
-                console.log("module: ", WebAssembly.Module.exports(window.wasm.module));
-                // log out all imported functions
-                console.log("imports: ", WebAssembly.Module.imports(window.wasm.module));
-                // call greet (uses the strLog function we imported into c)
-                // it logs to the console a greeting generated within c
-                wasm.instance.exports.greet();
-
-                // inspect this wasm instance's memory (stored in an ArrayBuffer):
-                //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed_arrays#ArrayBuffer
-                // each block of 64 kb is called a 'page' in wasm
-                console.log("array buffer: ", wasm.instance.exports.memory.buffer);
-
-            })
-
 
     </script>
 
